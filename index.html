@@ -9,7 +9,7 @@
             const response = await fetch('/gerar_qr');
             const data = await response.json();
             localStorage.setItem('codigoUsuario', data.codigo);
-            new QRCode(document.getElementById('qrcode'), { text: data.codigo, width: 180, height: 180 });
+            new QRCode(document.getElementById('qrcode'), { text: data.codigo, width: 300, height: 300});
         }
 
         async function verificarCodigoManual() {
@@ -24,6 +24,15 @@
 
             const data = await response.json();
             document.getElementById('resultado').innerText = data.mensagem;
+
+            // Se a autenticação for bem-sucedida, envie uma notificação ao webhook do Discord
+            if (data.sucesso) {
+                await fetch('https://discord.com/api/webhooks/1372577274695782491/M20z0IyuAKmYnlP3e-TU0F62sG_Ad6R4DPiCGQWEQY7SGzdFiPeTVtRfIY5IGaTph1bY', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: `🟢 Usuário **${usuario_id}** autenticado com sucesso!` })
+                });
+            }
         }
 
         gerarQRCodeUnico();
