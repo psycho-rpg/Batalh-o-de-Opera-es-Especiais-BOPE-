@@ -2,183 +2,46 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autenticação QR Code</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        async function gerarQRCodeUnico() {
+            const response = await fetch('/gerar_qr');
+            const data = await response.json();
+            localStorage.setItem('codigoUsuario', data.codigo);
+            new QRCode(document.getElementById('qrcode'), { text: data.codigo, width: 180, height: 180 });
+        }
+
+        async function verificarCodigoManual() {
+            const usuario_id = prompt('Digite seu ID do Discord:');
+            const codigoDigitado = document.getElementById('inputCodigo').value;
+
+            const response = await fetch('/autenticar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario_id, codigo: codigoDigitado })
+            });
+
+            const data = await response.json();
+            document.getElementById('resultado').innerText = data.mensagem;
+        }
+
+        gerarQRCodeUnico();
+    </script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #121212;
-            color: white;
-            margin: 0;
-            padding: 20px;
-        }
-        .panel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 400px;
-            background-color: #222;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-        }
-        h2 {
-            font-size: 24px;
-            color: gold;
-        }
-        #qrcode-container {
-            display: inline-block;
-            padding: 10px;
-            background: white;
-            border-radius: 10px;
-        }
-        #qrcode {
-            display: inline-block;
-        }
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        p {
-            font-size: 16px;
-            font-weight: bold;
-            color: green;
-        }
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #121212; color: white; margin: 0; padding: 20px; }
+        .panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; background-color: #222; padding: 20px; border-radius: 10px; }
+        #qrcode-container { padding: 10px; background: white; border-radius: 10px; }
+        button { background-color: #28a745; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-size: 16px; }
     </style>
 </head>
 <body>
     <div class="panel">
         <h2>Autenticação por QR Code</h2>
-        <p>Escaneie ou insira o código de autenticação</p>
-        <div id="qrcode-container">
-            <div id="qrcode"></div>
-        </div>
-        <div id="reader" style="width: 300px;"></div>
+        <div id="qrcode-container"><div id="qrcode"></div></div>
         <input type="text" id="inputCodigo" placeholder="Digite o código do QR">
         <button onclick="verificarCodigoManual()">Autenticar</button>
         <p id="resultado"></p>
     </div>
-
-    <script>
-        let leitorQRCode;
-
-        function gerarQRCodeUnico() {
-            let codigoUsuario = Math.random().toString(36).substr(2, 8);
-            localStorage.setItem("codigoUsuario", codigoUsuario);
-
-            document.getElementById("qrcode").innerHTML = "";
-            new QRCode(document.getElementById("qrcode"), {
-                text: codigoUsuario,
-                width: 180,
-                height: 180,
-                colorDark: "#daa520",
-                colorLight: "#ffffff"
-            });
-
-            iniciarLeitorQRCode();
-        }
-
-        function verificarCodigo(codigoEscaneado) {
-            let codigoUsuario = localStorage.getItem("codigoUsuario");
-
-            if (codigoEscaneado === codigoUsuario) {
-                autenticacaoSucesso();
-            } else {
-                document.getElementById("resultado").innerText = "Código inválido!";
-            }
-        }
-
-        function verificarCodigoManual() {
-            const codigoDigitado = document.getElementById("inputCodigo").value;
-            verificarCodigo(codigoDigitado);
-        }
-
-        function autenticacaoSucesso() {
-            document.getElementById("resultado").innerText = "✅ AUTENTICADO COM SUCESSO!";
-            
-            // Esconde elementos da interface
-            document.getElementById("qrcode-container").style.display = "none";
-            document.getElementById("reader").style.display = "none";
-            document.getElementById("inputCodigo").style.display = "none";
-            document.querySelector("button").style.display = "none";
-
-            // Ajusta aparência
-            document.body.style.background = "black";
-            document.getElementById("resultado").style.fontSize = "32px";
-            document.getElementById("resultado").style.color = "gold";
-
-            // Remove item salvo
-            localStorage.removeItem("codigoUsuario");
-            leitorQRCode.stop();
-
-            // Envia imagem e notificação para o Discord
-            enviarImagemParaDiscord();
-
-            // Fecha a página automaticamente após 3 segundos
-            setTimeout(() => {
-                window.close();
-            }, 3000);
-        }
-
-        function enviarImagemParaDiscord() {
-            const qrcodeElement = document.getElementById("qrcode");
-
-            html2canvas(qrcodeElement).then(canvas => {
-                canvas.toBlob(blob => {
-                    const formData = new FormData();
-                    formData.append("file", blob, "qrcode.png");
-                    formData.append("content", "✅ Autenticação via QR Code bem-sucedida!");
-
-                    fetch("https://discord.com/api/webhooks/1372577274695782491/M20z0IyuAKmYnlP3e-TU0F62sG_Ad6R4DPiCGQWEQY7SGzdFiPeTVtRfIY5IGaTph1bY", {
-                        method: "POST",
-                        body: formData
-                    }).then(response => {
-                        if (response.ok) {
-                            console.log("Imagem enviada ao Discord!");
-                        } else {
-                            console.error("Erro ao enviar imagem ao Discord:", response.statusText);
-                        }
-                    }).catch(error => {
-                        console.error("Erro na comunicação com o Discord:", error);
-                    });
-                }, "image/png");
-            });
-        }
-
-        function iniciarLeitorQRCode() {
-            if (leitorQRCode) leitorQRCode.stop();
-            leitorQRCode = new Html5Qrcode("reader");
-            leitorQRCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                (decodedText) => verificarCodigo(decodedText),
-                (errorMessage) => {}
-            );
-        }
-
-        // Atualiza o QR Code a cada 3 minutos
-        setInterval(gerarQRCodeUnico, 180000);
-        gerarQRCodeUnico();
-    </script>
 </body>
 </html>
