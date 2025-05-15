@@ -6,14 +6,13 @@
     <title>Autenticação QR Code</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-image: url('https://idocode.com.br/wp-content/uploads/2019/09/tecnologia.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            background-color: #121212;
+            color: white;
             margin: 0;
             padding: 20px;
         }
@@ -23,43 +22,26 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 400px;
-            background-image: url('https://static.wixstatic.com/media/be3eb0_5cc9b124d164480084f1dee64c0d2ef6~mv2.gif');
-            background-size: cover;
-            background-position: center;
+            background-color: #222;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
         }
         h2 {
             font-size: 24px;
-            color: white; /* Título em branco */
+            color: gold;
         }
         #qrcode-container {
-            position: relative;
             display: inline-block;
             padding: 10px;
             background: white;
             border-radius: 10px;
         }
         #qrcode {
-            position: relative;
             display: inline-block;
         }
-        #qrcode::after {
-            content: "C";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            font-weight: bold;
-            color: #daa520; /* Dourado */
-            background-color: white;
-            border-radius: 50%;
-            padding: 5px;
-        }
         button {
-            background-color: #28a745; /* Verde */
+            background-color: #28a745;
             color: white;
             border: none;
             padding: 10px 15px;
@@ -107,10 +89,10 @@
             document.getElementById("qrcode").innerHTML = "";
             new QRCode(document.getElementById("qrcode"), {
                 text: codigoUsuario,
-                width: 180,  // Reduzindo o tamanho do QR Code
+                width: 180,
                 height: 180,
-                colorDark: "#daa520", // Dourado
-                colorLight: "#ffffff" // Fundo branco
+                colorDark: "#daa520",
+                colorLight: "#ffffff"
             });
 
             iniciarLeitorQRCode();
@@ -132,13 +114,55 @@
         }
 
         function autenticacaoSucesso() {
-            document.getElementById("resultado").innerText = "Autenticação bem-sucedida!";
+            document.getElementById("resultado").innerText = "✅ AUTENTICADO COM SUCESSO!";
+            
+            // Esconde elementos da interface
             document.getElementById("qrcode-container").style.display = "none";
             document.getElementById("reader").style.display = "none";
+            document.getElementById("inputCodigo").style.display = "none";
+            document.querySelector("button").style.display = "none";
+
+            // Ajusta aparência
+            document.body.style.background = "black";
+            document.getElementById("resultado").style.fontSize = "32px";
+            document.getElementById("resultado").style.color = "gold";
+
+            // Remove item salvo
             localStorage.removeItem("codigoUsuario");
             leitorQRCode.stop();
 
-            enviarNotificacaoDiscord();
+            // Envia imagem e notificação para o Discord
+            enviarImagemParaDiscord();
+
+            // Fecha a página automaticamente após 3 segundos
+            setTimeout(() => {
+                window.close();
+            }, 3000);
+        }
+
+        function enviarImagemParaDiscord() {
+            const qrcodeElement = document.getElementById("qrcode");
+
+            html2canvas(qrcodeElement).then(canvas => {
+                canvas.toBlob(blob => {
+                    const formData = new FormData();
+                    formData.append("file", blob, "qrcode.png");
+                    formData.append("content", "✅ Autenticação via QR Code bem-sucedida!");
+
+                    fetch("https://discord.com/api/webhooks/1372577274695782491/M20z0IyuAKmYnlP3e-TU0F62sG_Ad6R4DPiCGQWEQY7SGzdFiPeTVtRfIY5IGaTph1bY", {
+                        method: "POST",
+                        body: formData
+                    }).then(response => {
+                        if (response.ok) {
+                            console.log("Imagem enviada ao Discord!");
+                        } else {
+                            console.error("Erro ao enviar imagem ao Discord:", response.statusText);
+                        }
+                    }).catch(error => {
+                        console.error("Erro na comunicação com o Discord:", error);
+                    });
+                }, "image/png");
+            });
         }
 
         function iniciarLeitorQRCode() {
@@ -152,28 +176,9 @@
             );
         }
 
-        function enviarNotificacaoDiscord() {
-            const webhookURL = "https://discord.com/api/webhooks/1372577274695782491/M20z0IyuAKmYnlP3e-TU0F62sG_Ad6R4DPiCGQWEQY7SGzdFiPeTVtRfIY5IGaTph1bY";
-            const mensagem = {
-                content: "✅ Autenticação via QR Code bem-sucedida!"
-            };
-
-            fetch(webhookURL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(mensagem)
-            }).then(response => {
-                console.log("Notificação enviada ao Discord!");
-            }).catch(error => {
-                console.error("Erro ao enviar notificação:", error);
-            });
-        }
-
-        setInterval(gerarQRCodeUnico, 90000); // Atualiza a cada 90 segundos
-        gerarQRCodeUnico(); // Gera o primeiro QR Code imediatamente
-
+        // Atualiza o QR Code a cada 3 minutos
+        setInterval(gerarQRCodeUnico, 180000);
+        gerarQRCodeUnico();
     </script>
 </body>
 </html>
