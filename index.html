@@ -2,54 +2,78 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Autenticação QR Code</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
-        async function gerarQRCodeUnico() {
-            const response = await fetch('/gerar_qr');
-            const data = await response.json();
-            localStorage.setItem('codigoUsuario', data.codigo);
-            new QRCode(document.getElementById('qrcode'), { text: data.codigo, width: 300, height: 300});
-        }
-
-        async function verificarCodigoManual() {
-            const usuario_id = prompt('Digite seu ID do Discord:');
-            const codigoDigitado = document.getElementById('inputCodigo').value;
-
-            const response = await fetch('/autenticar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario_id, codigo: codigoDigitado })
-            });
-
-            const data = await response.json();
-            document.getElementById('resultado').innerText = data.mensagem;
-
-            // Se a autenticação for bem-sucedida, envie uma notificação ao webhook do Discord
-            if (data.sucesso) {
-                await fetch('https://discord.com/api/webhooks/1372577274695782491/M20z0IyuAKmYnlP3e-TU0F62sG_Ad6R4DPiCGQWEQY7SGzdFiPeTVtRfIY5IGaTph1bY', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: `🟢 Usuário **${usuario_id}** autenticado com sucesso!` })
-                });
-            }
-        }
-
-        gerarQRCodeUnico();
-    </script>
+    <title>Autenticação</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #121212; color: white; margin: 0; padding: 20px; }
-        .panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; background-color: #222; padding: 20px; border-radius: 10px; }
-        #qrcode-container { padding: 10px; background: white; border-radius: 10px; }
-        button { background-color: #28a745; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-size: 16px; }
+        .container { width: 400px; margin: auto; padding: 20px; background-color: #222; border-radius: 10px; }
+        .tabs { display: flex; justify-content: space-between; cursor: pointer; }
+        .tab { flex: 1; padding: 10px; background-color: #333; border-radius: 5px; margin: 5px; }
+        .tab.active { background-color: #28a745; }
+        .tab-content { display: none; padding: 20px; }
+        .tab-content.active { display: block; }
+        input, button { width: 90%; padding: 10px; margin-top: 10px; border-radius: 5px; border: none; }
+        button { background-color: #28a745; color: white; cursor: pointer; }
     </style>
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+        }
+
+        async function autenticar() {
+            const nome = document.getElementById('nome').value;
+            const nick = document.getElementById('nick').value;
+            const id = document.getElementById('id').value;
+            const idade = document.getElementById('idade').value;
+
+            if (!nome || !nick || !id || !idade) {
+                alert("Preencha todos os campos!");
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/autenticar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, nick, id, idade })
+                });
+
+                const data = await response.json();
+                document.getElementById('resultado').innerText = data.mensagem;
+            } catch (error) {
+                console.error('Erro na autenticação:', error);
+                document.getElementById('resultado').innerText = 'Erro na autenticação.';
+            }
+        }
+    </script>
 </head>
 <body>
-    <div class="panel">
-        <h2>Autenticação por QR Code</h2>
-        <div id="qrcode-container"><div id="qrcode"></div></div>
-        <input type="text" id="inputCodigo" placeholder="Digite o código do QR">
-        <button onclick="verificarCodigoManual()">Autenticar</button>
+    <div class="container">
+        <h2>Autenticação</h2>
+        <div class="tabs">
+            <div class="tab active" data-tab="tab-nick" onclick="showTab('tab-nick')">Nick</div>
+            <div class="tab" data-tab="tab-nome" onclick="showTab('tab-nome')">Nome</div>
+            <div class="tab" data-tab="tab-id" onclick="showTab('tab-id')">ID</div>
+            <div class="tab" data-tab="tab-idade" onclick="showTab('tab-idade')">Idade</div>
+        </div>
+
+        <div id="tab-nick" class="tab-content active">
+            <input type="text" id="nick" placeholder="Digite seu Nick">
+        </div>
+        <div id="tab-nome" class="tab-content">
+            <input type="text" id="nome" placeholder="Digite seu Nome">
+        </div>
+        <div id="tab-id" class="tab-content">
+            <input type="text" id="id" placeholder="Digite seu ID">
+        </div>
+        <div id="tab-idade" class="tab-content">
+            <input type="number" id="idade" placeholder="Digite sua Idade">
+        </div>
+
+        <button onclick="autenticar()">Autenticar</button>
         <p id="resultado"></p>
     </div>
 </body>
