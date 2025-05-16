@@ -1,28 +1,24 @@
+import requests
+from flask import Flask, request, jsonify, render_template_string
+
+app = Flask(__name__)
+
+# URL do Webhook do Discord (substitua pelo seu)
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1372577274695782491/M20z0IyuAKmYnlP3e-TU0F62sG_Ad6R4DPiCGQWEQY7SGzdFiPeTVtRfIY5IGaTph1bY"
+
+HTML_PAGE = """
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Autenticação</title>
+    <title>Autenticação Biométrica</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; background-color: #121212; color: white; margin: 0; padding: 20px; }
         .container { width: 400px; margin: auto; padding: 20px; background-color: #222; border-radius: 10px; }
-        .tabs { display: flex; justify-content: space-between; cursor: pointer; }
-        .tab { flex: 1; padding: 10px; background-color: #333; border-radius: 5px; margin: 5px; }
-        .tab.active { background-color: #28a745; }
-        .tab-content { display: none; padding: 20px; }
-        .tab-content.active { display: block; }
         input, button { width: 90%; padding: 10px; margin-top: 10px; border-radius: 5px; border: none; }
         button { background-color: #28a745; color: white; cursor: pointer; }
     </style>
     <script>
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-        }
-
         async function autenticar() {
             const nome = document.getElementById('nome').value;
             const nick = document.getElementById('nick').value;
@@ -35,7 +31,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:3000/autenticar', {
+                const response = await fetch('/autenticar', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -45,10 +41,6 @@
                 });
 
                 const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(`Erro ${response.status}: ${data.mensagem}`);
-                }
 
                 document.getElementById('resultado').innerText = data.mensagem;
             } catch (error) {
@@ -60,29 +52,39 @@
 </head>
 <body>
     <div class="container">
-        <h2>Autenticação</h2>
-        <div class="tabs">
-            <div class="tab active" data-tab="tab-nick" onclick="showTab('tab-nick')">Nick</div>
-            <div class="tab" data-tab="tab-nome" onclick="showTab('tab-nome')">Nome</div>
-            <div class="tab" data-tab="tab-id" onclick="showTab('tab-id')">ID</div>
-            <div class="tab" data-tab="tab-idade" onclick="showTab('tab-idade')">Idade</div>
-        </div>
-
-        <div id="tab-nick" class="tab-content active">
-            <input type="text" id="nick" placeholder="Digite seu Nick">
-        </div>
-        <div id="tab-nome" class="tab-content">
-            <input type="text" id="nome" placeholder="Digite seu Nome">
-        </div>
-        <div id="tab-id" class="tab-content">
-            <input type="text" id="id" placeholder="Digite seu ID">
-        </div>
-        <div id="tab-idade" class="tab-content">
-            <input type="number" id="idade" placeholder="Digite sua Idade">
-        </div>
-
+        <h2>Autenticação Biométrica</h2>
+        <input type="text" id="nick" placeholder="Digite seu Nick">
+        <input type="text" id="nome" placeholder="Digite seu Nome">
+        <input type="text" id="id" placeholder="Digite seu ID">
+        <input type="number" id="idade" placeholder="Digite sua Idade">
         <button onclick="autenticar()">Autenticar</button>
         <p id="resultado"></p>
     </div>
 </body>
 </html>
+"""
+
+@app.route('/')
+def home():
+    return render_template_string(HTML_PAGE)
+
+@app.route('/autenticar', methods=['POST'])
+def autenticar():
+    dados = request.json
+
+    if not all(key in dados for key in ['id', 'nome', 'nick', 'idade']):
+        return jsonify({"mensagem": "Preencha todos os campos!"}), 400
+
+    mensagem_discord = {
+        "content": f"✅ Usuário autenticado!\n**Nome:** {dados['nome']}\n**Nick:** {dados['nick']}\n**ID:** {dados['id']}\n**Idade:** {dados['idade']}"
+    }
+
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json=mensagem_discord)
+    except Exception as e:
+        print(f"Erro ao enviar mensagem para o Discord: {e}")
+
+    return jsonify({"mensagem": f"Bem-vindo, {dados['nick']}! Autenticação bem-sucedida."}), 200
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=5000, debug=True)
