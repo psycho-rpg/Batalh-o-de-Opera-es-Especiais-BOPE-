@@ -37,15 +37,23 @@
             try {
                 const response = await fetch('http://localhost:3000/autenticar', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, nick, id, idade })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ id, nome, nick, idade })
                 });
 
                 const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${data.mensagem}`);
+                }
+
                 document.getElementById('resultado').innerText = data.mensagem;
             } catch (error) {
                 console.error('Erro na autenticação:', error);
-                document.getElementById('resultado').innerText = 'Erro na autenticação.';
+                document.getElementById('resultado').innerText = `Erro na autenticação: ${error.message}`;
             }
         }
     </script>
