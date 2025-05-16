@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Usa a porta do ambiente ou 3000 como padrão
 
 app.use(cors());
 app.use(express.json());
@@ -22,6 +22,7 @@ app.post('/autenticar', (req, res) => {
     return res.json({ sucesso: true, mensagem: `Usuário ${nome} (${nick}) autenticado com sucesso!` });
 });
 
+// Inicia o servidor na porta dinâmica
 app.listen(PORT, () => {
-    console.log(`Servidor rodando em http://localhost:${PORT}`);
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
