@@ -6,7 +6,7 @@
     <title>Inscrição - Operações Especiais BOPE</title>
     <style>
         body {
-            background: url('https://cdn.discordapp.com/attachments/1367840916211241002/1381598208710414447/image0.gif') no-repeat center center fixed;
+            background: url('https://cdn.discordapp.com/attachments/1367840916211241002/1381598208710414447/image0.gif?ex=68481919&is=6846c799&hm=7d95eed40538d2f343ef3d198c4b729b04e36870d9a9b9d6948b7c506b7d397e') no-repeat center center fixed;
             background-size: cover;
             font-family: Arial, sans-serif;
             color: white;
@@ -19,6 +19,9 @@
             font-weight: bold;
             display: block;
             margin-bottom: 20px;
+            color: yellow;
+            background-color: black;
+            padding: 10px;
         }
         .mensagem {
             font-size: 20px;
@@ -60,7 +63,7 @@
         Seu navegador não suporta áudio HTML5.
     </audio>
 
-    <h1 style="color: yellow; background-color: black; padding: 10px;">INSCRIÇÕES OPERAÇÕES ESPECIAIS BOPE</h1>
+    <h1>INSCRIÇÕES OPERAÇÕES ESPECIAIS BOPE</h1>
     <p class="mensagem">A coragem é o que nos define! Junte-se a nós e faça a diferença.</p>
 
     <div class="formulario">
@@ -132,7 +135,12 @@
             fetch(webhookURL, {
                 method: "POST",
                 body: payload
-            }).then(() => alert("Inscrição enviada com sucesso!"));
+            }).then(() => {
+                alert("Inscrição enviada com sucesso! Aguarde até ser convocado.");
+                window.close(); // Fecha a página automaticamente após o envio.
+            }).catch(() => {
+                alert("Ocorreu um erro ao enviar a inscrição. Por favor, tente novamente.");
+            });
         }
     </script>
 
