@@ -1,90 +1,140 @@
-import requests
-from flask import Flask, request, jsonify, render_template_string
-
-app = Flask(__name__)
-
-# URL do Webhook do Discord (substitua pelo seu)
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1372577274695782491/M20z0IyuAKmYnlP3e-TU0F62sG_Ad6R4DPiCGQWEQY7SGzdFiPeTVtRfIY5IGaTph1bY"
-
-HTML_PAGE = """
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Autenticação Biométrica</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição - Operações Especiais BOPE</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #121212; color: white; margin: 0; padding: 20px; }
-        .container { width: 400px; margin: auto; padding: 20px; background-color: #222; border-radius: 10px; }
-        input, button { width: 90%; padding: 10px; margin-top: 10px; border-radius: 5px; border: none; }
-        button { background-color: #28a745; color: white; cursor: pointer; }
-    </style>
-    <script>
-        async function autenticar() {
-            const nome = document.getElementById('nome').value;
-            const nick = document.getElementById('nick').value;
-            const id = document.getElementById('id').value;
-            const idade = document.getElementById('idade').value;
-
-            if (!nome || !nick || !id || !idade) {
-                alert("Preencha todos os campos!");
-                return;
-            }
-
-            try {
-                const response = await fetch('/autenticar', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ id, nome, nick, idade })
-                });
-
-                const data = await response.json();
-
-                document.getElementById('resultado').innerText = data.mensagem;
-            } catch (error) {
-                console.error('Erro na autenticação:', error);
-                document.getElementById('resultado').innerText = `Erro na autenticação: ${error.message}`;
-            }
+        body {
+            background: url('https://cdn.discordapp.com/attachments/1367840916211241002/1381598208710414447/image0.gif') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+            padding: 20px;
         }
-    </script>
+        h1 {
+            font-size: 50px;
+            text-transform: uppercase;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 20px;
+        }
+        .mensagem {
+            font-size: 20px;
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+        .formulario {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            text-align: left;
+        }
+        label {
+            font-size: 18px;
+            display: block;
+            margin-top: 10px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #ffcc00;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Autenticação Biométrica</h2>
-        <input type="text" id="nick" placeholder="Digite seu Nick">
-        <input type="text" id="nome" placeholder="Digite seu Nome">
-        <input type="text" id="id" placeholder="Digite seu ID">
-        <input type="number" id="idade" placeholder="Digite sua Idade">
-        <button onclick="autenticar()">Autenticar</button>
-        <p id="resultado"></p>
+
+    <audio autoplay loop>
+        <source src="musica-de-fundo.mp3" type="audio/mpeg">
+        Seu navegador não suporta áudio HTML5.
+    </audio>
+
+    <h1 style="color: yellow; background-color: black; padding: 10px;">INSCRIÇÕES OPERAÇÕES ESPECIAIS BOPE</h1>
+    <p class="mensagem">A coragem é o que nos define! Junte-se a nós e faça a diferença.</p>
+
+    <div class="formulario">
+        <form id="bopeForm">
+            <label>Nome:</label>
+            <input type="text" name="nome" required>
+
+            <label>ID:</label>
+            <input type="text" name="id" required>
+
+            <label>Patente:</label>
+            <input type="text" name="patente" required>
+
+            <label>Tempo de polícia (data de ingresso):</label>
+            <input type="date" name="tempo_policia" required>
+
+            <label>Já foi preso?</label>
+            <select name="preso" required>
+                <option value="">Selecione</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+            </select>
+
+            <label>Possui advertência?</label>
+            <select name="advertencia" required>
+                <option value="">Selecione</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+            </select>
+
+            <label>Companhia pertencente:</label>
+            <select name="cia" required>
+                <option value="">Selecione</option>
+                <option value="GAM">GAM</option>
+                <option value="GTM">GTM</option>
+                <option value="CHOQUE">CHOQUE</option>
+            </select>
+
+            <label>Motivo para ingressar no BOPE:</label>
+            <textarea name="motivo" rows="5" required></textarea>
+
+            <label>Anexar documento:</label>
+            <input type="file" name="anexo" accept=".jpg,.png,.pdf,.docx" required>
+
+            <button type="button" onclick="enviarFormulario()">Enviar Inscrição</button>
+        </form>
     </div>
+
+    <script>
+        function enviarFormulario() {
+            const webhookURL = "https://discord.com/api/webhooks/1373787235794686083/JcqZNWmHWPCqxCUXzlw5GWNWIaApax5sVFo51p9ZtiG5JcXT4j9YI47nX4PCLnGRKiPc";
+            
+            const formData = new FormData(document.getElementById("bopeForm"));
+            let mensagem = "**Nova Inscrição BOPE**\n\n";
+            
+            formData.forEach((valor, chave) => {
+                if (chave !== "anexo") {
+                    mensagem += `**${chave}:** ${valor}\n`;
+                }
+            });
+
+            const arquivo = formData.get("anexo");
+            const payload = new FormData();
+            payload.append("content", mensagem);
+            if (arquivo) {
+                payload.append("file", arquivo);
+            }
+
+            fetch(webhookURL, {
+                method: "POST",
+                body: payload
+            }).then(() => alert("Inscrição enviada com sucesso!"));
+        }
+    </script>
+
 </body>
 </html>
-"""
-
-@app.route('/')
-def home():
-    return render_template_string(HTML_PAGE)
-
-@app.route('/autenticar', methods=['POST'])
-def autenticar():
-    dados = request.json
-
-    if not all(key in dados for key in ['id', 'nome', 'nick', 'idade']):
-        return jsonify({"mensagem": "Preencha todos os campos!"}), 400
-
-    mensagem_discord = {
-        "content": f"✅ Usuário autenticado!\n**Nome:** {dados['nome']}\n**Nick:** {dados['nick']}\n**ID:** {dados['id']}\n**Idade:** {dados['idade']}"
-    }
-
-    try:
-        requests.post(DISCORD_WEBHOOK_URL, json=mensagem_discord)
-    except Exception as e:
-        print(f"Erro ao enviar mensagem para o Discord: {e}")
-
-    return jsonify({"mensagem": f"Bem-vindo, {dados['nick']}! Autenticação bem-sucedida."}), 200
-
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
